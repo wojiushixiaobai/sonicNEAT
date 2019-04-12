@@ -3,17 +3,20 @@ import numpy as np
 import cv2
 import neat
 import pickle
-
-from gym.envs.classic_control.rendering import SimpleImageViewer
+from greyImageViewer import GreyImageViewer
+from controllerViewer import ControllerViewer
 
 env = retro.make(game="SonicTheHedgehog-Genesis", state="GreenHillZone.Act1")
 imgarray = []
 xpos_end = 0
 
+SEE_NETWORK_INPUT=False
+
 resume = True
 restore_file = "neat-checkpoint-6"
 
 viewer = GreyImageViewer()
+controllerViewer = ControllerViewer()
 
 
 def eval_genomes(genomes, config):
@@ -42,19 +45,22 @@ def eval_genomes(genomes, config):
             frame += 1
             ob = cv2.resize(ob, (inx, iny))
             ob = cv2.cvtColor(ob, cv2.COLOR_BGR2GRAY)
-            img = ob.copy()
-            dst = (img.shape[0] * 8, img.shape[1] * 8)
-            img = cv2.resize(img, dst, interpolation=cv2.INTER_NEAREST)
-            img = np.flipud(img)
-            viewer.imshow(img)
+
+            if SEE_NETWORK_INPUT:
+                img = ob.copy()
+                dst = (img.shape[0] * 8, img.shape[1] * 8)
+                img = cv2.resize(img, dst, interpolation=cv2.INTER_NEAREST)
+                img = np.flipud(img)
+                viewer.imshow(img)
+
             ob = np.reshape(ob, (inx, iny))
 
             imgarray = np.ndarray.flatten(ob)
 
             nnOutput = net.activate(imgarray)
             ac = env.action_to_array(nnOutput)
-            print(ac)
-
+            # print(ac)
+            controllerViewer.actionshow(ac)
             ob, rew, done, info = env.step(nnOutput)
 
             xpos = info['x']
