@@ -1,0 +1,6 @@
+.idea/workspace.xml
+__pycache__/
+*.py[cod]
+*$py.class
+neat-checkpoint-*
+venv/
