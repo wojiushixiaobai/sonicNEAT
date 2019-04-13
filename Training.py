@@ -6,13 +6,13 @@ import pickle
 from greyImageViewer import GreyImageViewer
 from controllerViewer import ControllerViewer
 
-env = retro.make(game="SonicTheHedgehog-Genesis", state="GreenHillZone.Act1")
+env = retro.make(game="SonicTheHedgehog-Genesis", state="GreenHillZone.Act2", scenario="xpos")
 imgarray = []
 xpos_end = 0
 
 SEE_NETWORK_INPUT=False
 
-resume = True
+resume = False
 restore_file = "neat-checkpoint-6"
 
 viewer = GreyImageViewer()
@@ -65,7 +65,7 @@ def eval_genomes(genomes, config):
 
             xpos = info['x']
 
-            if xpos >= 65664:
+            if xpos >= 60000:
                 fitness_current += 10000000
                 done = True
 
