@@ -1,3 +1,4 @@
+import os
 import retro
 import numpy as np
 import cv2
@@ -6,14 +7,25 @@ import pickle
 from greyImageViewer import GreyImageViewer
 from controllerViewer import ControllerViewer
 
-env = retro.make(game="SonicTheHedgehog-Genesis", state="GreenHillZone.Act2", scenario="xpos")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+env = retro.make(game="SonicTheHedgehog-Genesis", scenario="xpos")
 imgarray = []
 xpos_end = 0
-
 SEE_NETWORK_INPUT=False
-
 resume = False
-restore_file = "neat-checkpoint-6"
+
+files=os.listdir(BASE_DIR)
+checkpoint=[]
+for file in files:
+    if "neat-checkpoint-" in file:
+        checkpoint.append(int(file.rsplit('-', maxsplit=1)[1]))
+
+if checkpoint:
+    restore_file = "neat-checkpoint-%s" %(max(checkpoint))
+    resume = True
+else:
+    restore_file = "neat-checkpoint-0"
 
 viewer = GreyImageViewer()
 controllerViewer = ControllerViewer()
@@ -60,7 +72,7 @@ def eval_genomes(genomes, config):
             nnOutput = net.activate(imgarray)
             ac = env.action_to_array(nnOutput)
             # print(ac)
-            controllerViewer.actionshow(ac)
+            # controllerViewer.actionshow(ac)
             ob, rew, done, info = env.step(nnOutput)
 
             xpos = info['x']
@@ -96,9 +108,9 @@ else:
 p.add_reporter(neat.StdOutReporter(True))
 stats = neat.StatisticsReporter()
 p.add_reporter(stats)
-p.add_reporter(neat.Checkpointer(1))
+p.add_reporter(neat.Checkpointer(5))
 
-winner = p.run(eval_genomes)
+winner = p.run(eval_genomes, 300)
 
 with open('winner.pkl', 'wb') as output:
     pickle.dump(winner, output, 1)
