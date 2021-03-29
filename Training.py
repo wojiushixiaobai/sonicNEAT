@@ -4,15 +4,11 @@ import numpy as np
 import cv2
 import neat
 import pickle
-from greyImageViewer import GreyImageViewer
-from controllerViewer import ControllerViewer
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-env = retro.make(game="SonicTheHedgehog-Genesis", scenario="xpos")
+env = retro.make(game = "SonicTheHedgehog-Genesis", state='GreenHillZone.Act2')
 imgarray = []
 xpos_end = 0
-SEE_NETWORK_INPUT=False
 resume = False
 
 files=os.listdir(BASE_DIR)
@@ -27,10 +23,6 @@ if checkpoint:
 else:
     restore_file = "neat-checkpoint-0"
 
-viewer = GreyImageViewer()
-controllerViewer = ControllerViewer()
-
-
 def eval_genomes(genomes, config):
     for genome_id, genome in genomes:
         ob = env.reset()
@@ -38,9 +30,8 @@ def eval_genomes(genomes, config):
 
         inx, iny, inc = env.observation_space.shape
 
-        inx = int(inx / 8)
-        iny = int(iny / 8)
-
+        inx = int(inx/8)
+        iny = int(iny/8)
         net = neat.nn.recurrent.RecurrentNetwork.create(genome, config)
 
         current_max_fitness = 0
@@ -48,38 +39,25 @@ def eval_genomes(genomes, config):
         frame = 0
         counter = 0
         xpos = 0
-
         done = False
 
         while not done:
-
             env.render()
             frame += 1
             ob = cv2.resize(ob, (inx, iny))
             ob = cv2.cvtColor(ob, cv2.COLOR_BGR2GRAY)
-
-            if SEE_NETWORK_INPUT:
-                img = ob.copy()
-                dst = (img.shape[0] * 8, img.shape[1] * 8)
-                img = cv2.resize(img, dst, interpolation=cv2.INTER_NEAREST)
-                img = np.flipud(img)
-                viewer.imshow(img)
-
-            ob = np.reshape(ob, (inx, iny))
+            ob = np.reshape(ob, (inx,iny))
 
             imgarray = np.ndarray.flatten(ob)
-
             nnOutput = net.activate(imgarray)
-            ac = env.action_to_array(nnOutput)
-            # print(ac)
-            # controllerViewer.actionshow(ac)
+
             ob, rew, done, info = env.step(nnOutput)
 
             xpos = info['x']
 
-            if xpos >= 60000:
-                fitness_current += 10000000
-                done = True
+            if xpos >= 65664:
+                    fitness_current += 10000000
+                    done = True
 
             fitness_current += rew
 
@@ -95,7 +73,6 @@ def eval_genomes(genomes, config):
 
             genome.fitness = fitness_current
 
-
 config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                      neat.DefaultSpeciesSet, neat.DefaultStagnation,
                      'config-feedforward')
@@ -108,9 +85,9 @@ else:
 p.add_reporter(neat.StdOutReporter(True))
 stats = neat.StatisticsReporter()
 p.add_reporter(stats)
-p.add_reporter(neat.Checkpointer(5))
+p.add_reporter(neat.Checkpointer(1))
 
-winner = p.run(eval_genomes, 300)
+winner = p.run(eval_genomes)
 
 with open('winner.pkl', 'wb') as output:
     pickle.dump(winner, output, 1)
